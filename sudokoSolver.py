@@ -9,34 +9,22 @@ class Solution37:
         self.n_valid_char = len(self.valid_char_list)
         self.allRows = []
         self.allRowsB = []  # backup
-
-
-
-    def solveSudoku(self, board: List[List[str]]) -> None:
-        """
-        Do not return anything, modify board in-place instead.
-        """
-        char_list = self.valid_char_list
-        rows = self.allRows
         for r in range(9):
-            rows.append([9, []])
+            self.allRows.append([9, []])
             self.allRowsB.append([9, []])
         self.allCols = []
         self.allColsB = []
-        cols = self.allCols
         for c in range(9):
-            cols.append([9, []])
+            self.allCols.append([9, []])
             self.allColsB.append([9, []])
         self.allGroups = []
         self.allGroupsB = []
-        groups = self.allGroups
         for gr in range(3):
-            groups.append([])
+            self.allGroups.append([])
             self.allGroupsB.append([])
             for gc in range(3):
-                groups[gr].append([9, []])
+                self.allGroups[gr].append([9, []])
                 self.allGroupsB[gr].append([9, []])
-
         self.row_char_count = []
         for r in range(9):
             self.row_char_count.append([])
@@ -57,8 +45,19 @@ class Solution37:
                 for i in range(len(self.valid_char_list)):
                     self.group_char_count[gr][gc].append([0, []])
 
+
+
+    def solveSudoku(self, board: List[List[str]]) -> None:
+        """
+        Do not return anything, modify board in-place instead.
+        """
+        char_list = self.valid_char_list
+        rows = self.allRows
+        cols = self.allCols
+        groups = self.allGroups
         self.board = board
         self.boardB = []
+
         for r in range(9):
             self.boardB.append([])
             for c in range(9):
