@@ -64,8 +64,8 @@ class Solution37:
                 self.boardB[r].append(self.board[r][c])
         r_ref = 0
         gr_ref = 0
-        r_subCount = 0
-        dotCount = 0
+        r_sub_count = 0
+        dot_count = 0
         for r in range(9):
             c_ref = 0
             c_subCount = 0
@@ -77,17 +77,17 @@ class Solution37:
                     self.note_down(cols[c_ref], val)
                     self.note_down(groups[gr_ref][gc_ref], val)
                 else:
-                    dotCount = dotCount + 1
+                    dot_count = dot_count + 1
                 c_ref = c_ref + 1
                 c_subCount = c_subCount + 1
                 if c_subCount >= 3:
                     gc_ref = gc_ref + 1
                     c_subCount = 0
             r_ref = r_ref + 1
-            r_subCount = r_subCount + 1
-            if r_subCount >= 3:
+            r_sub_count = r_sub_count + 1
+            if r_sub_count >= 3:
                 gr_ref = gr_ref + 1
-                r_subCount = 0
+                r_sub_count = 0
 
         rounds = 0
         self.filled = 0
@@ -96,28 +96,83 @@ class Solution37:
         self.look_at_2 = False
         choice_stat = []
         self.choice_char = []
+        self.choice_charB = []
         for r in range(9):
             choice_stat.append([0, 0, 0, 0, 0, 0, 0, 0, 0])
             self.choice_char.append([])
+            self.choice_charB.append([])
             for c in range(9):
                 self.choice_char[r].append([])
+                self.choice_charB[r].append([])
 
-        self.choice2Cells = []
-        self.gambleCell = []
-        self.gambelChar = ''
-        self.gamblePos = -1
-
-        while self.filled < dotCount and rounds <= 81:
+        self.choice2cells = []
+        self.gamble_cell = []
+        self.gamble_char = []
+        gamble_cell_pos = 0
+        n_trial = 0
+        trials_on = False
+        choice2cell_filled_chars1 = []
+        choice2cell_filled_chars2 = []
+        self.backedup = False
+        while self.filled < dot_count and rounds <= 81:
 #            if self.look_at_2 and self.filled <= last_filled:
 #                self.collectChoice2Cells()
 #                break
 
-            if self.look_at_2 and self.filled <= last_filled:
-                self.collectChoice2Cells()
-                if len(self.choice2Cells):
-                    self.gambleCell.clear()
-                    self.gambleCell.append(self.choice2Cells[0])
-                    self.gambelChar = self.choice_char[self.gambleCell[0][0]][self.gambleCell[0][1]]
+            if self.look_at_2:
+                if trials_on:
+                    if n_trial == 0:
+                        print('n_trial = ', n_trial)
+                        n_trial = n_trial + 1
+                        choice2cell_filled_chars1.clear()
+                        for cell in self.choice2cells:
+                            choice2cell_filled_chars1.append(board[cell[0]][cell[1]])
+                        # try next
+                        if self.restore():
+                            r, c = self.gamble_cell[0]
+                            self.update_done_char(r, c, self.gamble_char[n_trial])
+                        else:
+                            break
+
+                    elif n_trial == 1:
+                        print('n_trial = ', n_trial)
+                        choice2cell_filled_chars2.clear()
+                        for cell in self.choice2cells:
+                            choice2cell_filled_chars2.append(board[cell[0]][cell[1]])
+                        print('trying ', self.choice2cells[gamble_cell_pos], self.choice2cells)
+                        repeat_found = -1
+                        for i in range(len(choice2cell_filled_chars1)):
+                            s = choice2cell_filled_chars1[i]
+                            if not (s == '.') and s == choice2cell_filled_chars2[i]:
+                                repeat_found = i
+                                break
+
+                        if repeat_found >= 0:
+                            if self.restore():
+                                r, c = self.choice2cells[repeat_found]
+                                self.update_done_char(r, c, self.gamble_char[n_trial])
+                        else:
+                            self.restore()
+                            if gamble_cell_pos < len(self.choice2cells):
+                                gamble_cell_pos = gamble_cell_pos + 1
+                                n_trial = 0
+                                trials_on = False
+                                continue
+                            else:
+                                break
+
+                elif self.filled <= last_filled:
+                    self.backup()
+                    self.collect_choice2cells()
+                    if len(self.choice2cells):
+                        self.gamble_cell.clear()
+                        self.gamble_cell.append(self.choice2cells[gamble_cell_pos])
+                        r, c = self.gamble_cell[0]
+                        self.gamble_char.clear()
+                        for s in self.choice_char[r][c]:
+                            self.gamble_char.append(s)
+                        self.update_done_char(r, c, self.gamble_char[n_trial])
+                        trials_on = True
 
             if (self.filled <= last_filled):
                     self.look_at_2 = True
@@ -126,7 +181,7 @@ class Solution37:
             # print(count, filled, look_at_2)
             rounds = rounds + 1
 #            missed = 0
-            r_subCount = 0
+            r_sub_count = 0
             self.clear_char_counts()
 
             for r in range(9):
@@ -158,14 +213,13 @@ class Solution37:
             if self.look_at_2:
                 self.check_single_miss_and_update()
                 if self.filled <= last_filled:
-                    self.gambleCell.clear()
-                    self.gamblePos = -1
+                    self.gamble_pos = -1
 
                 #                    print('No Change')
                 else:
                     print("Changed")
 
-        print('rounds ', rounds, 'dotCount', dotCount, 'filled ', self.filled)
+        print('rounds ', rounds, 'dot_count', dot_count, 'filled ', self.filled)
         print('ROW choice_char')
         for r in range(9):
             s = []
@@ -189,17 +243,19 @@ class Solution37:
             print(r)
 
         print('choice2Cells')
-        print(self.choice2Cells)
-        print(self.gambleCell, self.gambelChar)
+        print(self.choice2cells)
+        print(self.gamble_cell)
+        print('gamble_char', self.gamble_char)
+        print('choice2cell_filled_chars1', choice2cell_filled_chars1)
+        print('choice2cell_filled_chars2', choice2cell_filled_chars2)
 
-
-    def collectChoice2Cells(self):
-        self.choice2Cells.clear()
+    def collect_choice2cells(self):
+        self.choice2cells.clear()
         for r in range(9):
             char_r = self.choice_char[r]
             for c in range (9):
                 if len(char_r[c]) == 2:
-                    self.choice2Cells.append([r, c])
+                    self.choice2cells.append([r, c])
 
     def clear_char_counts(self):
         for i in range(9):
@@ -285,33 +341,49 @@ class Solution37:
                 for j in range(len(self.allGroups[g1][g2][1])):
                     s = self.allGroups[g1][g2][1][j]
                     self.allGroupsB[g1][g2][1].append(s)
-
-    def restore(self):
-        self.filled = self.filledB
         for r in range(9):
             for c in range(9):
-                self.board[r][c] = self.boardB[r][c]
+                self.choice_charB[r][c].clear()
+                for i in range(len(self.choice_char[r][c])):
+                    self.choice_charB[r][c].append(self.choice_char[r][c][i])
+        self.backedup = True
 
-        for i in range(9):
-            self.allRows[i][0] = self.allRowsB[i][0]
-            self.allRows[i][1].clear()
-            for j in range(len(self.allRowsB[i][1])):
-                s = self.allRowsB[i][1][j]
-                self.allRows[i][1].append(s)
-        for i in range(9):
-            self.allCols[i][0] = self.allColsB[i][0]
-            self.allCols[i][1].clear()
-            for j in range(len(self.allColsB[i][1])):
-                s = self.allColsB[i][1][j]
-                self.allCols[i][1].append(s)
-        for g1 in range(3):
-            for g2 in range(3):
-                self.allGroups[g1][g2][0] = self.allGroupsB[g1][g2][0]
-                self.allGroups[g1][g2][1].clear()
-                for j in range(len(self.allGroups[g1][g2][1])):
-                    s = self.allGroupsB[g1][g2][1][j]
-                    self.allGroups[g1][g2][1].append(s)
+    def restore(self):
+        ret_val = False
+        if self.backedup:
+            self.filled = self.filledB
+            for r in range(9):
+                for c in range(9):
+                    self.board[r][c] = self.boardB[r][c]
 
+            for i in range(9):
+                self.allRows[i][0] = self.allRowsB[i][0]
+                self.allRows[i][1].clear()
+                for j in range(len(self.allRowsB[i][1])):
+                    s = self.allRowsB[i][1][j]
+                    self.allRows[i][1].append(s)
+            for i in range(9):
+                self.allCols[i][0] = self.allColsB[i][0]
+                self.allCols[i][1].clear()
+                for j in range(len(self.allColsB[i][1])):
+                    s = self.allColsB[i][1][j]
+                    self.allCols[i][1].append(s)
+            for g1 in range(3):
+                for g2 in range(3):
+                    self.allGroups[g1][g2][0] = self.allGroupsB[g1][g2][0]
+                    self.allGroups[g1][g2][1].clear()
+                    for j in range(len(self.allGroups[g1][g2][1])):
+                        s = self.allGroupsB[g1][g2][1][j]
+                        self.allGroups[g1][g2][1].append(s)
+            for r in range(9):
+                for c in range(9):
+                    self.choice_char[r][c].clear()
+                    for i in range(len(self.choice_charB[r][c])):
+                        self.choice_char[r][c].append(self.choice_charB[r][c][i])
+        ret_val = True
+#        else:
+#            print('No backed up data!')
+        return ret_val
 
 S = Solution37()
 # board = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
@@ -326,8 +398,8 @@ board = [[".", ".", "9", "7", "4", "8", ".", ".", "."], ["7", ".", ".", ".", "."
 # part updated from filled dotCount 54 filled 24
 # board = [[".","1","9","7","4","8",".",".","2"],["7",".",".","6",".","2",".",".","9"],[".","2",".","1",".","9",".",".","."],[".",".","7","9","8","6","2","4","1"],["2","6","4","3","1","7","5","9","8"],["1","9","8","5","2","4","3","6","7"],["9",".",".","8","6","3",".","2","."],[".",".","2","4","9","1",".",".","6"],[".",".",".","2","7","5","9",".","."]]
 # solved input
-# board = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
+board = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
 S.solveSudoku(board)
 print('Result')
-for r in board:
-    print(r)
+for r1 in board:
+    print(r1)
