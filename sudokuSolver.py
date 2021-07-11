@@ -104,8 +104,8 @@ class Solution37:
         gamble_cell_pos = 0
         self.n_trial = 0
         self.trials_on = False
-        choice2cell_filled_chars1 = []
-        choice2cell_filled_chars2 = []
+#        choice2cell_filled_chars1 = []
+#        choice2cell_filled_chars2 = []
         for r in range(9):
             self.fresh_filled[0].append([])
             self.fresh_filled[1].append([])
@@ -171,7 +171,7 @@ class Solution37:
                             else:
                                 print('all choice2cells have been tried !')
                                 self.trials_on = False
-                                break
+ #                               break
 
                 elif self.filled <= last_filled:
                     self.n_trial = 0
@@ -191,41 +191,48 @@ class Solution37:
 
             if self.filled <= last_filled:
                 self.look_at_2 = True
-                #                break
+
             last_filled = self.filled
             # print(count, filled, look_at_2)
             rounds = rounds + 1
 
             self.clear_char_counts()
-            for r in range(9):
-                row = rows[r][1]
-                gr_ref = r // 3
-                for c in range(9):
-                    gc_ref = c // 3
-                    missed = 0
-                    val = '.'
-                    col = cols[c][1]
-                    if board[r][c] == '.':
-                        for char_pos in range(self.n_valid_char):
-                            s = char_list[char_pos]
-                            if not ((s in row) or (s in col) or (s in groups[gr_ref][gc_ref][1])):
-                                missed = missed + 1
-                                # print(count, 'count',r, c, s, row)
-                                if missed > 1 and not self.look_at_2:
-                                    break
-                                val = s
-                                if self.look_at_2:
-                                    self.update_missed_char(r, c, val)
+            try_once_more = True
+            while try_once_more:
+#               rounds = rounds + 1
+                try_once_more = False
+                for r in range(9):
+#                    try_once_more = False
+                    row = rows[r][1]
+                    gr_ref = r // 3
+                    for c in range(9):
+                        gc_ref = c // 3
+                        missed = 0
+                        val = '.'
+                        col = cols[c][1]
+                        if board[r][c] == '.':
+                            for char_pos in range(self.n_valid_char):
+                                s = char_list[char_pos]
+                                if not ((s in row) or (s in col) or (s in groups[gr_ref][gc_ref][1])):
+                                    val = s
+                                    missed = missed + 1
+                                    # print(count, 'count',r, c, s, row)
+                                    if missed > 1 and not self.look_at_2:
+                                        break
+                                    if self.look_at_2:
+                                        self.update_missed_char(r, c, val)
 
-                        if missed == 1:  # sole candidate
-                            self.update_done_char(r, c, val)
-                        elif self.look_at_2:
-                            choice_stat[r][c] = missed
+                            if missed == 1:  # sole candidate
+                                self.update_done_char(r, c, val)
+                                try_once_more = try_once_more or True
+                            elif self.look_at_2:
+                                choice_stat[r][c] = missed
 
-            if self.look_at_2:
-                print('before check_single_miss_and_update ', self.filled)
-                self.check_single_miss_and_update()  # unique candidate
-                print('After check_single_miss_and_update ', self.filled)
+            if self.look_at_2 and not self.trials_on:
+#                print('before check_single_miss_and_update ', self.filled)
+#                try_once_more = self.check_single_miss_and_update() or try_once_more # unique candidate
+                self.check_single_miss_and_update() # unique candidate
+#                print('After check_single_miss_and_update ', self.filled)
 
         print('rounds ', rounds, 'dot_count', dot_count, 'filled ', self.filled)
         print('ROW choice_char at last check_single_miss_and_update')
@@ -257,8 +264,8 @@ class Solution37:
         print(self.choice2cells)
         print(self.gamble_cell)
         print('gamble_char', self.gamble_char)
-        print('choice2cell_filled_chars1', choice2cell_filled_chars1)
-        print('choice2cell_filled_chars2', choice2cell_filled_chars2)
+#        print('choice2cell_filled_chars1', choice2cell_filled_chars1)
+#        print('choice2cell_filled_chars2', choice2cell_filled_chars2)
 
     def clear_fresh_filled(self):
         for r in range(9):
@@ -291,21 +298,26 @@ class Solution37:
                 c.clear()
 
     def check_single_miss_and_update(self):
+        found = False
         # rows
         for r in range(9):
-            self.update_one_single_miss_cell(self.row_char_count[r])
+            found = self.update_one_single_miss_cell(self.row_char_count[r]) or found
         # cols
         for c in range(9):
-            self.update_one_single_miss_cell(self.col_char_count[c])
+            found = self.update_one_single_miss_cell(self.col_char_count[c]) or found
         # group
         for g1 in range(3):
             for g2 in range(3):
-                self.update_one_single_miss_cell(self.group_char_count[g1][g2])
+                found = self.update_one_single_miss_cell(self.group_char_count[g1][g2]) or found
+        return found
 
     def update_one_single_miss_cell(self, miss_list: List):
+        found = False
         for s in range(self.n_valid_char):
             if miss_list[s][0] == 1:
                 self.update_done_char(*miss_list[s][1][0], *self.valid_char_list[s])
+                found = found or True
+        return found
 
     def update_done_char(self, r: int, c: int, val: str):
         if self.board1[r][c] == '.':
