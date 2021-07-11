@@ -104,8 +104,6 @@ class Solution37:
         gamble_cell_pos = 0
         self.n_trial = 0
         self.trials_on = False
-#        choice2cell_filled_chars1 = []
-#        choice2cell_filled_chars2 = []
         for r in range(9):
             self.fresh_filled[0].append([])
             self.fresh_filled[1].append([])
@@ -121,29 +119,16 @@ class Solution37:
             if self.look_at_2:
                 if self.trials_on:
                     if self.n_trial == 0:
-                        print('n_trial = ', self.n_trial)
                         self.n_trial = self.n_trial + 1
-#                        choice2cell_filled_chars1.clear()
-#                        for cell in self.choice2cells:
-#                            choice2cell_filled_chars1.append(board[cell[0]][cell[1]])
                         # try next
-                        print('filled so far in trial 0 = ', self.filled)
                         if self.restore():
                             r, c = self.gamble_cell[0]
-                            print('trying ', r, c, *self.gamble_char[self.n_trial])
                             self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
                         else:
                             break
 
                     elif self.n_trial == 1:
-                        print('n_trial = ', self.n_trial)
-#                           choice2cell_filled_chars2.clear()
-#                           for cell in self.choice2cells:
-#                            choice2cell_filled_chars2.append(board[cell[0]][cell[1]])
-#                        print('trying ', self.choice2cells[gamble_cell_pos], self.choice2cells)
                         repeat_found = False
-                        print('filled compare  ', self.trial_filled[0], self.trial_filled[1], 'due to cell ',
-                              self.gamble_cell[0])
                         self.restore()
                         # look for force chain effect
                         for r_found in range(9):
@@ -164,14 +149,11 @@ class Solution37:
                                 self.gamble_char.clear()
                                 for s in self.choice_char[r][c]:
                                     self.gamble_char.append(s)
-                                print('trying ', r, c, *self.gamble_char[self.n_trial])
                                 self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
                                 self.clear_fresh_filled()
 #                                continue
                             else:
-                                print('all choice2cells have been tried !')
                                 self.trials_on = False
- #                               break
 
                 elif self.filled <= last_filled:
                     self.n_trial = 0
@@ -184,7 +166,6 @@ class Solution37:
                         self.gamble_char.clear()
                         for s in self.choice_char[r][c]:
                             self.gamble_char.append(s)
-                        print('Start trying ', r, c, *self.gamble_char[self.n_trial])
                         self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
                         self.trials_on = True
                         self.clear_fresh_filled()
@@ -193,16 +174,13 @@ class Solution37:
                 self.look_at_2 = True
 
             last_filled = self.filled
-            # print(count, filled, look_at_2)
             rounds = rounds + 1
 
             self.clear_char_counts()
             try_once_more = True
             while try_once_more:
-#               rounds = rounds + 1
                 try_once_more = False
                 for r in range(9):
-#                    try_once_more = False
                     row = rows[r][1]
                     gr_ref = r // 3
                     for c in range(9):
@@ -216,7 +194,6 @@ class Solution37:
                                 if not ((s in row) or (s in col) or (s in groups[gr_ref][gc_ref][1])):
                                     val = s
                                     missed = missed + 1
-                                    # print(count, 'count',r, c, s, row)
                                     if missed > 1 and not self.look_at_2:
                                         break
                                     if self.look_at_2:
@@ -229,13 +206,8 @@ class Solution37:
                                 choice_stat[r][c] = missed
 
             if self.look_at_2 and not self.trials_on:
-#                print('before check_single_miss_and_update ', self.filled)
-#                try_once_more = self.check_single_miss_and_update() or try_once_more # unique candidate
                 self.check_single_miss_and_update() # unique candidate
-#                print('After check_single_miss_and_update ', self.filled)
 
-        print('rounds ', rounds, 'dot_count', dot_count, 'filled ', self.filled)
-        print('ROW choice_char at last check_single_miss_and_update')
         for r in range(9):
             s = []
             for i in range(9):
