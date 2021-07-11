@@ -2,10 +2,25 @@
 from typing import List
 
 
-# Sudoko Solver
+# Sudoku Solver
 class Solution37:
     def __init__(self):
-        self.backedup = False
+        self.look_at_2 = True
+        self.trials_on = True
+        self.fresh_filled = [[], []]
+        self.gamble_char = []
+        self.gamble_cell = []
+        self.choice2cells = []
+        self.choice_charB = []
+        self.choice_char = []
+        self.fresh_filled = [[], []]
+        self.trial_filled = [0, 0]
+        self.filledB = 0
+        self.filled = 0
+        self.n_trial = 0
+        self.board1 = []
+        self.boardB = []
+        self.backed_up = False
         self.valid_char_list = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
         self.n_valid_char = len(self.valid_char_list)
         self.allRows = []
@@ -55,7 +70,6 @@ class Solution37:
         cols = self.allCols
         groups = self.allGroups
         self.board1 = board
-        self.boardB = []
 
         for r in range(9):
             self.boardB.append([])
@@ -76,13 +90,9 @@ class Solution37:
                 c_ref = c_ref + 1
             r_ref = r_ref + 1
         rounds = 0
-        self.filled = 0
-        self.filledB = 0
         last_filled = -1
         self.look_at_2 = False
         choice_stat = []
-        self.choice_char = []
-        self.choice_charB = []
         for r in range(9):
             choice_stat.append([0, 0, 0, 0, 0, 0, 0, 0, 0])
             self.choice_char.append([])
@@ -91,16 +101,11 @@ class Solution37:
                 self.choice_char[r].append([])
                 self.choice_charB[r].append([])
 
-        self.choice2cells = []
-        self.gamble_cell = []
-        self.gamble_char = []
         gamble_cell_pos = 0
         self.n_trial = 0
         self.trials_on = False
         choice2cell_filled_chars1 = []
         choice2cell_filled_chars2 = []
-        self.fresh_filled = [[], []]
-        self.trial_filled = [0, 0]
         for r in range(9):
             self.fresh_filled[0].append([])
             self.fresh_filled[1].append([])
@@ -144,10 +149,11 @@ class Solution37:
                         for r_found in range(9):
                             for c_found in range(9):
                                 s1 = self.fresh_filled[0][r_found][c_found]
-                                if not s1 == '.':
-                                    if self.fresh_filled[1][r_found][c_found] == s1:
-                                        self.update_done_char(r_found, c_found, s1)
-                                        repeat_found = True
+                                if s1 == '.':
+                                    continue
+                                if self.fresh_filled[1][r_found][c_found] == s1:
+                                    self.update_done_char(r_found, c_found, s1)
+                                    repeat_found = True
                         if not repeat_found:
                             if gamble_cell_pos < len(self.choice2cells) - 1:
                                 gamble_cell_pos = gamble_cell_pos + 1
@@ -220,31 +226,28 @@ class Solution37:
                 print('before check_single_miss_and_update ', self.filled)
                 self.check_single_miss_and_update()  # unique candidate
                 print('After check_single_miss_and_update ', self.filled)
-                if self.filled <= last_filled:
-                    self.gamble_pos = -1
-
-                #                    print('No Change')
-                else:
-                    print("Changed, filled = ", self.filled)
 
         print('rounds ', rounds, 'dot_count', dot_count, 'filled ', self.filled)
         print('ROW choice_char at last check_single_miss_and_update')
         for r in range(9):
             s = []
-            for i in range(9): s.append(self.row_char_count[r][i][0])
+            for i in range(9):
+                s.append(self.row_char_count[r][i][0])
             print('     ch_count', s)
 
         print('COL choice_char at last check_single_miss_and_update')
         for c in range(9):
             s = []
-            for i in range(9): s.append(self.col_char_count[c][i][0])
+            for i in range(9):
+                s.append(self.col_char_count[c][i][0])
             print('     ch_count', s)
 
         print('GROUP choice_char at last check_single_miss_and_update')
         for g1 in range(3):
             for g2 in range(3):
                 s = []
-                for i in range(9): s.append(self.group_char_count[g1][g2][i][0])
+                for i in range(9):
+                    s.append(self.group_char_count[g1][g2][i][0])
                 print('     ch_count', s)
         print('self.choice_char valid in updated board')
         for r in self.choice_char:
@@ -267,7 +270,7 @@ class Solution37:
         self.choice2cells.clear()
         for r in range(9):
             char_r = self.choice_char[r]
-            for c in range (9):
+            for c in range(9):
                 if len(char_r[c]) == 2:
                     self.choice2cells.append([r, c])
 
@@ -363,11 +366,11 @@ class Solution37:
                 self.choice_charB[r][c].clear()
                 for i in range(len(self.choice_char[r][c])):
                     self.choice_charB[r][c].append(self.choice_char[r][c][i])
-        self.backedup = True
+        self.backed_up = True
 
     def restore(self):
         ret_val = False
-        if self.backedup:
+        if self.backed_up:
             self.filled = self.filledB
             for r in range(9):
                 for c in range(9):
@@ -402,6 +405,7 @@ class Solution37:
             print('No backed up data!')
         return ret_val
 
+
 S = Solution37()
 # board2 = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
 # original unsolved input
@@ -415,7 +419,7 @@ board2 = [[".", ".", "9", "7", "4", "8", ".", ".", "."], ["7", ".", ".", ".", ".
 # part updated from filled dotCount 54 filled 24
 # board2 = [[".","1","9","7","4","8",".",".","2"],["7",".",".","6",".","2",".",".","9"],[".","2",".","1",".","9",".",".","."],[".",".","7","9","8","6","2","4","1"],["2","6","4","3","1","7","5","9","8"],["1","9","8","5","2","4","3","6","7"],["9",".",".","8","6","3",".","2","."],[".",".","2","4","9","1",".",".","6"],[".",".",".","2","7","5","9",".","."]]
 # solved input
-board2 = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
+# board2 = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
 S.solveSudoku(board2)
 print('Result')
 for r1 in board2:
