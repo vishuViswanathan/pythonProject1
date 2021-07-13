@@ -5,7 +5,7 @@ from typing import List
 # Sudoku Solver
 class Solution37:
     def __init__(self):
-        self.look_at_2 = True
+        self.look_at_2 = False
         self.trials_on = True
         self.fresh_filled = [[], []]
         self.gamble_char = []
@@ -14,7 +14,7 @@ class Solution37:
         self.choice_charB = []
         self.choice_char = []
         self.fresh_filled = [[], []]
-        self.trial_filled = [0, 0]
+#        self.trial_filled = [0, 0]
         self.filledB = 0
         self.filled = 0
         self.n_trial = 0
@@ -91,7 +91,7 @@ class Solution37:
             r_ref = r_ref + 1
         rounds = 0
         last_filled = -1
-        self.look_at_2 = False
+#        self.look_at_2 = True
         choice_stat = []
         for r in range(9):
             choice_stat.append([0, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -111,6 +111,11 @@ class Solution37:
                 self.fresh_filled[0][r].append('.')
                 self.fresh_filled[1][r].append('.')
 
+        self.unique_count = [0, 0]
+        self.sole_count = [0, 0]
+        self.forced_count = [0, 0]
+        self.forced_trial = 0
+        # all above [now, backup]
         while self.filled < dot_count and rounds <= 81:
             # if self.look_at_2 and self.filled <= last_filled:
             #     self.collectChoice2Cells()
@@ -122,8 +127,10 @@ class Solution37:
                         self.n_trial = self.n_trial + 1
                         # try next
                         if self.restore():
+                            self.forced_trial = self.forced_trial - 1
                             r, c = self.gamble_cell[0]
                             self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
+                            self.forced_trial = self.forced_trial + 1
                         else:
                             break
 
@@ -139,8 +146,11 @@ class Solution37:
                                 if self.fresh_filled[1][r_found][c_found] == s1:
                                     self.update_done_char(r_found, c_found, s1)
                                     repeat_found = True
+                                    self.forced_count[0] = self.forced_count[0] + 1
+                                    print('repeat_found')
                         if not repeat_found:
                             if gamble_cell_pos < len(self.choice2cells) - 1:
+                                self.forced_trial = self.forced_trial - 1
                                 gamble_cell_pos = gamble_cell_pos + 1
                                 self.n_trial = 0
                                 self.gamble_cell.clear()
@@ -150,10 +160,17 @@ class Solution37:
                                 for s in self.choice_char[r][c]:
                                     self.gamble_char.append(s)
                                 self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
+                                self.forced_trial = self.forced_trial + 1
                                 self.clear_fresh_filled()
+                                print('trying ', *self.gamble_char[self.n_trial], 'at ', self.gamble_cell[0], gamble_cell_pos, 'of', len(self.choice2cells))
 #                                continue
                             else:
                                 self.trials_on = False
+                                self.restore()
+                                self.forced_trial = self.forced_trial - 1
+                                gamble_cell_pos = 0
+#                                self.look_at_2 = False
+                                print('all trials exhausted at round, filled ', rounds, self.filled)
 
                 elif self.filled <= last_filled:
                     self.n_trial = 0
@@ -167,8 +184,10 @@ class Solution37:
                         for s in self.choice_char[r][c]:
                             self.gamble_char.append(s)
                         self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
+                        self.forced_trial = self.forced_trial + 1
                         self.trials_on = True
                         self.clear_fresh_filled()
+                        print('Start trying ', *self.gamble_char[self.n_trial], 'at ', self.gamble_cell[0])
 
             if self.filled <= last_filled:
                 self.look_at_2 = True
@@ -201,13 +220,19 @@ class Solution37:
 
                             if missed == 1:  # sole candidate
                                 self.update_done_char(r, c, val)
+                                self.sole_count[0] = self.sole_count[0] + 1
                                 try_once_more = try_once_more or True
                             elif self.look_at_2:
                                 choice_stat[r][c] = missed
 
             if self.look_at_2 and not self.trials_on:
                 self.check_single_miss_and_update() # unique candidate
-
+        print('rounds', rounds)
+        print('filled', self.filled, ' / ', dot_count)
+        print('sole = ', self.sole_count)
+        print('unique = ', self.unique_count)
+        print('forced = ', self.forced_count)
+        print('forced_trial = ', self.forced_trial)
 
     def clear_fresh_filled(self):
         for r in range(9):
@@ -240,18 +265,26 @@ class Solution37:
                 c.clear()
 
     def check_single_miss_and_update(self):
-        found = False
         # rows
-        for r in range(9):
-            found = self.update_one_single_miss_cell(self.row_char_count[r]) or found
-        # cols
-        for c in range(9):
-            found = self.update_one_single_miss_cell(self.col_char_count[c]) or found
-        # group
-        for g1 in range(3):
-            for g2 in range(3):
-                found = self.update_one_single_miss_cell(self.group_char_count[g1][g2]) or found
-        return found
+        for row in self.row_char_count:
+            for char_pos in range(9):
+                elem = row[char_pos]
+                if elem[0] == 1:
+                    r, c = elem[1][0]
+                    # check with col_char_count
+                    elem_c = self.col_char_count[c][char_pos]
+                    if elem_c[0] == 1:
+                        cr, cc = elem_c[1][0]
+                        if cr == r and cc == c:
+                            g1 = r // 3
+                            g2 = c // 3
+                            # check with group
+                            elem_g = self.group_char_count[g1][g2][char_pos]
+                            if elem_g[0] == 1:
+                                gr, gc = elem_g[1][0]
+                                if gr == r and gc == c:
+                                    self.update_done_char(r, c, self.valid_char_list[char_pos])
+                                    self.unique_count[0] = self.unique_count[0] + 1
 
     def update_one_single_miss_cell(self, miss_list: List):
         found = False
@@ -270,7 +303,7 @@ class Solution37:
             self.filled = self.filled + 1
             if self.trials_on:
                 self.fresh_filled[self.n_trial][r][c] = val
-                self.trial_filled[self.n_trial] = self.filled
+#                self.trial_filled[self.n_trial] = self.filled
 
     def update_missed_char(self, r: int, c: int, val: str):
         if self.look_at_2:
@@ -292,6 +325,10 @@ class Solution37:
 
     def backup(self):
         self.filledB = self.filled
+        self.unique_count[1] = self.unique_count[0]
+        self.sole_count[1] =  self.sole_count[0]
+        self.forced_count[1] = self.forced_count[0]
+
         for r in range(9):
             for c in range(9):
                 self.boardB[r][c] = self.board1[r][c]
@@ -324,6 +361,9 @@ class Solution37:
 
     def restore(self):
         ret_val = False
+        self.unique_count[0] = self.unique_count[1]
+        self.sole_count[0] = self.sole_count[1]
+        self.forced_count[0] = self.forced_count[1]
         if self.backed_up:
             self.filled = self.filledB
             for r in range(9):
@@ -361,11 +401,11 @@ class Solution37:
 S = Solution37()
 # board2 = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
 # original unsolved input
-# board2 = [[".", ".", "9", "7", "4", "8", ".", ".", "."], ["7", ".", ".", ".", ".", ".", ".", ".", "."], _
-#        [".", "2", ".", "1", ".", "9", ".", ".", "."], [".", ".", "7", ".", ".", ".", "2", "4", "."],
-#         [".", "6", "4", ".", "1", ".", "5", "9", "."], [".", "9", "8", ".", ".", ".", "3", ".", "."],
-#         [".", ".", ".", "8", ".", "3", ".", "2", "."], [".", ".", ".", ".", ".", ".", ".", ".", "6"],
-#         [".", ".", ".", "2", "7", "5", "9", ".", "."]]
+#board2 = [[".", ".", "9", "7", "4", "8", ".", ".", "."], ["7", ".", ".", ".", ".", ".", ".", ".", "."],
+#    [".", "2", ".", "1", ".", "9", ".", ".", "."], [".", ".", "7", ".", ".", ".", "2", "4", "."],
+#    [".", "6", "4", ".", "1", ".", "5", "9", "."], [".", "9", "8", ".", ".", ".", "3", ".", "."],
+#    [".", ".", ".", "8", ".", "3", ".", "2", "."], [".", ".", ".", ".", ".", ".", ".", ".", "6"],
+#    [".", ".", ".", "2", "7", "5", "9", ".", "."]]
 # part updated
 # board2 = [[".",".","9","7","4","8",".",".","2"],["7",".",".",".",".",".",".",".","9"],[".","2",".","1",".","9",".",".","."],[".",".","7",".",".",".","2","4","."],[".","6","4",".","1",".","5","9","."],[".","9","8",".",".",".","3",".","."],["9",".",".","8",".","3",".","2","."],[".",".","2",".",".",".",".",".","6"],[".",".",".","2","7","5","9",".","."]]
 # part updated from filled dotCount 54 filled 24
@@ -374,6 +414,8 @@ S = Solution37()
 # board2 = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
 # test sample 6
 board2 = [[".",".",".","2",".",".",".","6","3"],["3",".",".",".",".","5","4",".","1"],[".",".","1",".",".","3","9","8","."],[".",".",".",".",".",".",".","9","."],[".",".",".","5","3","8",".",".","."],[".","3",".",".",".",".",".",".","."],[".","2","6","3",".",".","5",".","."],["5",".","3","7",".",".",".",".","8"],["4","7",".",".",".","1",".",".","."]]
+# test sample 4 requiring force chain code
+# board2 = [[".",".","9","7","4","8",".",".","."],["7",".",".",".",".",".",".",".","."],[".","2",".","1",".","9",".",".","."],[".",".","7",".",".",".","2","4","."],[".","6","4",".","1",".","5","9","."],[".","9","8",".",".",".","3",".","."],[".",".",".","8",".","3",".","2","."],[".",".",".",".",".",".",".",".","6"],[".",".",".","2","7","5","9",".","."]]
 S.solveSudoku(board2)
 print('Result')
 for r1 in board2:
