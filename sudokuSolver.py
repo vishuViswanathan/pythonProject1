@@ -90,7 +90,7 @@ class Solution37:
                     dot_count = dot_count + 1
                 c_ref = c_ref + 1
             r_ref = r_ref + 1
-        rounds = 0
+        eff_rounds = 0
         last_filled = -1
 #        self.look_at_2 = True
         choice_stat = []
@@ -116,12 +116,19 @@ class Solution37:
         self.forced_count = [0, 0]
         self.forced_trial = 0
         # all above [now, backup]
+        rounds = 0
+        self.eff_rounds = 0
+        self.eff_rounsB = 0
         while self.filled < dot_count:
             # if self.look_at_2 and self.filled <= last_filled:
             #     self.collectChoice2Cells()
             #     break
-            if rounds > 120:
+            rounds = rounds + 1
+            if rounds > 1000:
                 print('too many rounds, exiting')
+                break
+            if self.eff_rounds > 120:
+                print('too many self.eff_rounds, exiting')
                 break
             if self.look_at_2:
                 if self.trials_on:
@@ -149,18 +156,20 @@ class Solution37:
                                 s0 = self.fresh_filled[0][r_found][c_found]
                                 if s0 == '.':
                                     continue
-                                repeat_found = False
+                                local_repeat_found = False
                                 for i in range(1, len(self.gamble_char)):
-                                    if repeat_found:
-                                        break
                                     s = self.fresh_filled[i][r_found][c_found]
-                                    if s == s0:
-                                        repeat_found = True
-                                        self.update_done_char(r_found, c_found, s0)
-                                        self.forced_count[0] = self.forced_count[0] + 1
-                                        self.trials_on = False
-                                        print('repeat_found in cell ', [r_found, c_found], s0, 'filled', self.filled,
-                                              'rounds', rounds)
+                                    local_repeat_found = (s == s0)
+                                    if not local_repeat_found:
+                                        break
+                                if local_repeat_found:
+                                    repeat_found = True
+                                    self.update_done_char(r_found, c_found, s0)
+                                    self.forced_count[0] = self.forced_count[0] + 1
+#                                    self.trials_on = False
+                                    print('repeat_found in cell ', [r_found, c_found], s0, 'filled', self.filled,
+                                          'self.eff_rounds', self.eff_rounds)
+
                         if not repeat_found:
                             if gamble_cell_pos < len(self.choice2cells) - 1:
                                 self.forced_trial = self.forced_trial - 1
@@ -184,7 +193,7 @@ class Solution37:
                                 self.forced_trial = self.forced_trial - 1
                                 gamble_cell_pos = 0
 #                                self.look_at_2 = False
-                                print('all trials exhausted at round', rounds, 'filled', self.filled)
+                                print('all trials exhausted at round', self.eff_rounds, 'filled', self.filled)
 
                 elif self.filled <= last_filled:
                     self.n_trial = 0
@@ -198,7 +207,7 @@ class Solution37:
                         for s in self.choice_char[r][c]:
                             self.gamble_char.append(s)
                         print('Start trying ', *self.gamble_char[self.n_trial], 'at ', self.gamble_cell[0],
-                              'rounds', rounds, 'filled', self.filled)
+                              'self.eff_rounds', self.eff_rounds, 'filled', self.filled)
                         self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
                         self.forced_trial = self.forced_trial + 1
                         self.trials_on = True
@@ -208,7 +217,7 @@ class Solution37:
                 self.look_at_2 = True
 
             last_filled = self.filled
-            rounds = rounds + 1
+            self.eff_rounds = self.eff_rounds + 1
 
             self.clear_char_counts()
             try_once_more = True
@@ -242,7 +251,7 @@ class Solution37:
 
             if self.look_at_2 and not self.trials_on:
                 self.check_single_miss_and_update() # unique candidate
-        print('rounds', rounds)
+        print('self.eff_rounds', self.eff_rounds)
         print('filled', self.filled, ' / ', dot_count)
         print('sole = ', self.sole_count)
         print('unique = ', self.unique_count)
@@ -260,7 +269,7 @@ class Solution37:
         for r in range(9):
             char_r = self.choice_char[r]
             for c in range(9):
-                if 1 < len(char_r[c]) < 9:
+                if 1 < len(char_r[c]) < 3:
                     self.choice2cells.append([r, c])
 
     def clear_char_counts(self):
@@ -345,6 +354,7 @@ class Solution37:
             note[0] = note[0] - 1
 
     def backup(self):
+        self.eff_rounsB = self.eff_rounds
         self.filledB = self.filled
         self.unique_count[1] = self.unique_count[0]
         self.sole_count[1] =  self.sole_count[0]
@@ -382,6 +392,7 @@ class Solution37:
 
     def restore(self):
         ret_val = False
+        self.eff_rounds = self.eff_rounsB
         self.unique_count[0] = self.unique_count[1]
         self.sole_count[0] = self.sole_count[1]
         self.forced_count[0] = self.forced_count[1]
