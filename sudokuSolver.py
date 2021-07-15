@@ -218,7 +218,7 @@ class Solution37:
 
             last_filled = self.filled
             self.eff_rounds = self.eff_rounds + 1
-
+            self.clear_choice_char()
             self.clear_char_counts()
             try_once_more = True
             while try_once_more:
@@ -269,7 +269,7 @@ class Solution37:
         for r in range(9):
             char_r = self.choice_char[r]
             for c in range(9):
-                if 1 < len(char_r[c]) < 3:
+                if 1 < len(char_r[c]) < 4:
                     self.choice2cells.append([r, c])
 
     def clear_char_counts(self):
@@ -290,50 +290,36 @@ class Solution37:
 
     def check_single_miss_and_update(self):
         # rows
-        done = False
         for row in self.row_char_count:
-            if done:
-                break
-            for char_pos in range(9):
-                if done:
-                    break
-                elem = row[char_pos]
-                if elem[0] == 1:
-                    r, c = elem[1][0]
-                    # check with col_char_count
-                    elem_c = self.col_char_count[c][char_pos]
-                    if elem_c[0] == 1:
-                        cr, cc = elem_c[1][0]
-                        if cr == r and cc == c:
-                            g1 = r // 3
-                            g2 = c // 3
-                            # check with group
-                            elem_g = self.group_char_count[g1][g2][char_pos]
-                            if elem_g[0] == 1:
-                                gr, gc = elem_g[1][0]
-                                if gr == r and gc == c:
-                                    self.update_done_char(r, c, self.valid_char_list[char_pos])
-                                    self.unique_count[0] = self.unique_count[0] + 1
-                                    done = True
+            self.update_one_single_miss_cell(row)
+        for col in self.col_char_count:
+            self.update_one_single_miss_cell(col)
+        for g1 in self.group_char_count:
+            for g2 in g1:
+                self.update_one_single_miss_cell(g2)
 
-    def update_one_single_miss_cell(self, miss_list: List):
+    def update_one_single_miss_cell(self, miss_list: List) -> bool:
         found = False
         for s in range(self.n_valid_char):
             if miss_list[s][0] == 1:
-                self.update_done_char(*miss_list[s][1][0], *self.valid_char_list[s])
-                found = found or True
+                if self.update_done_char(*miss_list[s][1][0], *self.valid_char_list[s]):
+                    self.unique_count[0] = self.unique_count[0] + 1
+                    found = found or True
         return found
 
-    def update_done_char(self, r: int, c: int, val: str):
+    def update_done_char(self, r: int, c: int, val: str) -> bool:
+        retVal = False
         if self.board1[r][c] == '.':
             self.board1[r][c] = val
             self.note_down(self.allRows[r], val)
             self.note_down(self.allCols[c], val)
             self.note_down(self.allGroups[r // 3][c // 3], val)
             self.filled = self.filled + 1
+            retVal = True
             if self.trials_on:
                 self.fresh_filled[self.n_trial][r][c] = val
 #                self.trial_filled[self.n_trial] = self.filled
+        return retVal
 
     def update_missed_char(self, r: int, c: int, val: str):
         if self.look_at_2:
@@ -347,6 +333,11 @@ class Solution37:
             self.group_char_count[gr_ref][gc_ref][char_num][0] = self.group_char_count[gr_ref][gc_ref][char_num][0] + 1
             self.group_char_count[gr_ref][gc_ref][char_num][1].append([r, c])
             self.choice_char[r][c].append(val)
+
+    def clear_choice_char(self):
+        for row in self.choice_char:
+            for c in range(9):
+                row[c].clear()
 
     def note_down(self, note: List, val: str):
         if val not in note[1]:
@@ -418,7 +409,7 @@ class Solution37:
                 for g2 in range(3):
                     self.allGroups[g1][g2][0] = self.allGroupsB[g1][g2][0]
                     self.allGroups[g1][g2][1].clear()
-                    for j in range(len(self.allGroups[g1][g2][1])):
+                    for j in range(len(self.allGroupsB[g1][g2][1])):
                         s = self.allGroupsB[g1][g2][1][j]
                         self.allGroups[g1][g2][1].append(s)
             for r in range(9):
