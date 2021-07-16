@@ -166,9 +166,6 @@ class Solution37:
                                     repeat_found = True
                                     self.update_done_char(r_found, c_found, s0)
                                     self.forced_count[0] = self.forced_count[0] + 1
-#                                    self.trials_on = False
-                                    print('repeat_found in cell ', [r_found, c_found], s0, 'filled', self.filled,
-                                          'self.eff_rounds', self.eff_rounds)
 
                         if not repeat_found:
                             if gamble_cell_pos < len(self.choice2cells) - 1:
@@ -184,16 +181,11 @@ class Solution37:
                                 self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
                                 self.forced_trial = self.forced_trial + 1
                                 self.clear_fresh_filled()
-                                print('trying ', *self.gamble_char[self.n_trial], 'at ', self.gamble_cell[0],
-                                      gamble_cell_pos, 'of', len(self.choice2cells))
-#                                continue
                             else:
                                 self.trials_on = False
                                 self.restore()
                                 self.forced_trial = self.forced_trial - 1
                                 gamble_cell_pos = 0
-#                                self.look_at_2 = False
-                                print('all trials exhausted at round', self.eff_rounds, 'filled', self.filled)
 
                 elif self.filled <= last_filled:
                     self.n_trial = 0
@@ -206,8 +198,6 @@ class Solution37:
                         self.gamble_char.clear()
                         for s in self.choice_char[r][c]:
                             self.gamble_char.append(s)
-                        print('Start trying ', *self.gamble_char[self.n_trial], 'at ', self.gamble_cell[0],
-                              'self.eff_rounds', self.eff_rounds, 'filled', self.filled)
                         self.update_done_char(r, c, *self.gamble_char[self.n_trial])  # force chain
                         self.forced_trial = self.forced_trial + 1
                         self.trials_on = True
@@ -251,12 +241,6 @@ class Solution37:
 
             if self.look_at_2 and not self.trials_on:
                 self.check_single_miss_and_update() # unique candidate
-        print('self.eff_rounds', self.eff_rounds)
-        print('filled', self.filled, ' / ', dot_count)
-        print('sole = ', self.sole_count)
-        print('unique = ', self.unique_count)
-        print('forced = ', self.forced_count)
-        print('forced_trial = ', self.forced_trial)
 
     def clear_fresh_filled(self):
         for r in range(9):
